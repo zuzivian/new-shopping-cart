@@ -1,4 +1,6 @@
-{
+// products.js
+
+const jsonResponse = {
   "products": [
     {
       "id": 12,
@@ -238,4 +240,6 @@
       "isFreeShipping": true
     }
   ]
-}
+};
+
+//export jsonResponse;

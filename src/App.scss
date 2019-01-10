@@ -1,0 +1,238 @@
+.App {
+  text-align: center;
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  color: white;
+}
+
+
+.Sidebar {
+  background-color: #cccccc;
+  color: #000000;
+  width: 15%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.Canvas {
+  background-color: #444444;
+  width: 85%;
+  float: left;
+  min-height: 600px;
+}
+
+.SizeButton {
+  flex-grow: 1;
+  border-radius: 50%;
+  font-size: 16px;
+  padding: 10px;
+  margin: 10px;
+}
+
+
+
+
+.filters {
+  width: 15%;
+  float: left;
+
+  .star-button-container {
+    text-align: center;
+    small {
+      color: #aaa;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+  }
+
+  .title {
+    margin-top: 2px;
+    margin-bottom: 20px;
+  }
+
+  &-available-size {
+    display: inline-block;
+    margin-bottom: 10px;
+    /* Customize the label (the container) */
+    label {
+      display: inline-block;
+      position: relative;
+      cursor: pointer;
+      font-size: 22px;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      width: 35px;
+      height: 35px;
+      font-size: 0.8em;
+      margin-bottom: 8px;
+      margin-right: 8px;
+      border-radius: 50%;
+      line-height: 35px;
+      text-align: center;
+
+      /* On mouse-over, add a grey background color */
+      &:hover input ~ .checkmark {
+        border: 1px solid #1b1a20;
+      }
+
+      /* When the checkbox is checked, add a blue background */
+      & input:checked ~ .checkmark {
+        background-color: #1b1a20;
+        color: #ececec;
+      }
+
+      /* Show the checkmark when checked */
+      & input:checked ~ .checkmark:after {
+        display: block;
+      }
+
+      input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      /* Create a custom checkbox */
+      .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 35px;
+        height: 35px;
+        font-size: 0.8em;
+        border-radius: 50%;
+        line-height: 35px;
+        text-align: center;
+        color: #1b1a20;
+        background-color: #ececec;
+
+        border: 1px solid transparent;
+      }
+    }
+  }
+}
+
+
+
+
+.shelf-container {
+  width: 85%;
+  float: left;
+  min-height: 600px;
+
+  &-header {
+    margin-bottom: 10px;
+
+    .products-found {
+      float: left;
+      margin: 0;
+      margin-top: 8px;
+    }
+
+    .sort {
+      float: right;
+
+      select {
+        background-color: #fff;
+        outline: none;
+        border: 1px solid #ececec;
+        border-radius: 2px;
+        margin-left: 10px;
+        width: auto;
+        height: 35px;
+        cursor: pointer;
+
+        &:hover {
+          border: 1px solid #5b5a5e;
+        }
+      }
+    }
+  }
+
+  .shelf-item {
+    float: left;
+    width: 25%;
+    position: relative;
+    text-align: center;
+    box-sizing: border-box;
+    padding: 10px;
+    margin-bottom: 30px;
+    border: 1px solid transparent;
+    cursor: pointer;
+
+    &:hover {
+      border: 1px solid #eee;
+
+      .shelf-item__buy-btn {
+        background-color: #eabf00;
+      }
+    }
+
+    .shelf-stopper {
+      position: absolute;
+      color: #ececec;
+      top: 10px;
+      right: 10px;
+      padding: 5px;
+      font-size: 0.6em;
+      background-color: #1b1a20;
+      cursor: default;
+    }
+
+    &__thumb {
+      img {
+        width: 100%;
+      }
+    }
+
+    &__title {
+      position: relative;
+      padding: 0 20px;
+      height: 45px;
+
+      &::before {
+        content: '';
+        width: 20px;
+        height: 2px;
+        background-color: #eabf00;
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        margin-left: -10px;
+      }
+    }
+
+    &__price {
+      height: 60px;
+
+      .val {
+        b {
+          font-size: 1.5em;
+          margin-left: 5px;
+        }
+      }
+
+      .installment {
+        color: #9c9b9b;
+      }
+    }
+
+    &__buy-btn {
+      background-color: #1b1a20;
+      color: #fff;
+      padding: 15px 0;
+      margin-top: 10px;
+      cursor: pointer;
+      // border-bottom: 2px solid #151419;
+
+      transition: background-color 0.2s;
+    }
+  }
+}
