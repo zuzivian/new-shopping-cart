@@ -13,7 +13,7 @@ class Sidebar extends Component {
   render() {
     return (
       <div className="filters">
-        <p>Sizes:</p>
+        <h4 className="title">Sizes:</h4>
         <SizeButton size="XS" />
         <SizeButton size="S" />
         <SizeButton size="M" />
@@ -37,18 +37,20 @@ class Product extends Component {
         </div>
         <p className="shelf-item__title">{product.title}</p>
         <p className="shelf-item__price">${product.price.toFixed(2)}</p>
-        <div className="shelf-item__buy-btn">Add to Cart</div>
+        <div className="shelf-item__buy-btn" onClick={() => this.props.onClick()}>Add to Cart</div>
       </div>
     );
   }
 }
 
 class Canvas extends Component {
+
   render() {
     const products = jsonResponse.products;
     const productListing = products.map((key, val) => {
+      let p = products[val];
       return (
-        <Product product={products[val]}/>
+        <Product key={p.sku} product={p} onClick={() => this.props.addCartHandler(p)} />
       );
     });
 
@@ -61,16 +63,93 @@ class Canvas extends Component {
   }
 }
 
+class CartProduct extends Component {
+  state = {
+    isMouseOver: false
+  };
+
+  handleMouseOver = () => {
+    this.setState({ isMouseOver: true });
+  };
+
+  handleMouseOut = () => {
+    this.setState({ isMouseOver: false });
+  };
+
+  render() {
+    const { product, removeProduct } = this.props;
+
+    const classes = ['shelf-item'];
+
+    if (!!this.state.isMouseOver) {
+      classes.push('shelf-item--mouseover');
+    }
+
+    return (
+      <div className={classes.join(' ')}>
+        <div
+          className="shelf-item__del"
+          onMouseOver={() => this.handleMouseOver()}
+          onMouseOut={() => this.handleMouseOut()}
+          onClick={() => removeProduct(product)}
+        />
+        <img
+          classes="shelf-item__thumb"
+          src={require(`./static/data/products/${product.sku}_2.jpg`)}
+          alt={product.title}
+        />
+        <div className="shelf-item__details">
+          <p className="title">{product.title}</p>
+          <p className="desc">
+            {`${product.availableSizes[0]} | ${product.style}`} <br />
+            Quantity: {product.quantity}
+          </p>
+        </div>
+        <div className="shelf-item__price">
+          <p>${product.price}</p>
+        </div>
+
+        <div className="clearfix" />
+      </div>
+    );
+  }
+}
+
 class FloatCart extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      isOpen: true,
+      isOpen: false,
     };
   }
 
+  openFloatCart = () => {
+    this.setState({ isOpen: true });
+  };
+
+  closeFloatCart = () => {
+    this.setState({ isOpen: false });
+  };
+
+  removeProduct = product => {
+    const { cartProducts, updateCart } = this.props;
+
+    const index = cartProducts.findIndex(p => p.id === product.id);
+    if (index >= 0) {
+      cartProducts.splice(index, 1);
+      updateCart(cartProducts);
+    }
+  };
+
   render() {
+    const cartProducts = this.props.cartProducts;
     let classes = ['float-cart'];
+
+    const products = cartProducts.map(p => {
+      return (
+        <CartProduct product={p} removeProduct={() => this.removeProduct()} key={p.id} />
+      );
+    });
 
         if (!!this.state.isOpen) {
           classes.push('float-cart--open');
@@ -81,6 +160,7 @@ class FloatCart extends Component {
             {/* If cart open, show close (x) button */}
             {this.state.isOpen && (
               <div
+                onClick={() => this.closeFloatCart()}
                 className="float-cart__close-btn"
               >
                 X
@@ -90,25 +170,29 @@ class FloatCart extends Component {
             {/* If cart is closed, show bag with quantity of product and open cart action */}
         {!this.state.isOpen && (
           <span
+            onClick={() => this.openFloatCart()}
             className="bag bag--float-cart-closed"
           >
-            <span className="bag__quantity">0</span>
+            <span className="bag__quantity">{cartProducts.length}</span>
           </span>
         )}
 
         <div className="float-cart__content">
           <div className="float-cart__header">
             <span className="bag">
-              <span className="bag__quantity">0</span>
+              <span className="bag__quantity">{cartProducts.length}</span>
             </span>
             <span className="header-title">Cart</span>
           </div>
 
           <div className="float-cart__shelf-container">
+            {products}
+            {!products.length && (
               <p className="shelf-empty">
                 Add some products in the cart <br />
                 :)
               </p>
+            )}
           </div>
 
           <div className="float-cart__footer">
@@ -131,14 +215,35 @@ class FloatCart extends Component {
 }
 
 class App extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      cartProducts: [],
+    };
+  }
+
+  addCartHandler(prod) {
+    const cartProducts = this.state.cartProducts.slice();
+    cartProducts.push(prod);
+    this.setState({
+      cartProducts: cartProducts,
+    });
+  }
+
+  updateCart(cartProducts) {
+    this.setState({
+      cartProducts: cartProducts,
+    });
+  }
+
   render() {
     return (
       <div className="App">
         <main>
           <Sidebar />
-          <Canvas />
+          <Canvas addCartHandler={() => this.addCartHandler()} />
         </main>
-      <FloatCart />
+      <FloatCart cartProducts={this.state.cartProducts} updateCart={() => this.updateCart()}/>
       </div>
     );
   }
