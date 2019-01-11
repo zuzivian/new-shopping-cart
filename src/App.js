@@ -17,6 +17,7 @@ class Sidebar extends Component {
         <SizeButton size="XS" />
         <SizeButton size="S" />
         <SizeButton size="M" />
+        <SizeButton size="X" />
         <SizeButton size="ML" />
         <SizeButton size="L" />
         <SizeButton size="XL" />
@@ -26,18 +27,42 @@ class Sidebar extends Component {
   }
 }
 
+class ProductSizeButton extends Component {
+  render() {
+    const size = this.props.size;
+    return (
+      <div
+        className="shelf-item__buy-btn"
+        onClick={() => this.props.handleButtonClick()}
+      >
+        {size}
+      </div>
+    );
+  }
+}
+
 class Product extends Component {
   render() {
     const product = this.props.product;
+
+    const buyButtons = Object.keys(product.availableSizes).map((size, qty) => {
+      return (
+        <ProductSizeButton
+          size={size}
+          handleButtonClick={() => this.props.handleButtonClick(size)}
+        />
+      );
+    })
+
     return (
-      <div className="shelf-item" onClick={() => this.props.onClick()}>
+      <div className="shelf-item">
         <div className="shelf-item__thumb">
           <img src={require(`./static/data/products/${product.sku}_1.jpg`)}
            alt={product.title} />
         </div>
         <p className="shelf-item__title">{product.title}</p>
         <p className="shelf-item__price">${product.price.toFixed(2)}</p>
-        <div className="shelf-item__buy-btn">Add to Cart</div>
+        {buyButtons}
       </div>
     );
   }
@@ -46,11 +71,15 @@ class Product extends Component {
 class Canvas extends Component {
 
   render() {
-    const products = jsonResponse.products;
+    const products = this.props.inventory;
     const productListing = products.map((key, val) => {
       let p = products[val];
       return (
-        <Product key={p.sku} product={p} onClick={() => this.props.handleAddToCartButton(p)} />
+        <Product
+          key={p.sku}
+          product={p}
+          handleButtonClick={(sz) => this.props.handleAddToCartButton(p, sz)}
+        />
       );
     });
 
@@ -93,19 +122,19 @@ class CartProduct extends Component {
           onClick={() => removeProduct(product)}
         />
         <img
-          classes="shelf-item__thumb"
+          className="shelf-item__thumb"
           src={require(`./static/data/products/${product.sku}_2.jpg`)}
           alt={product.title}
         />
         <div className="shelf-item__details">
           <p className="title">{product.title}</p>
           <p className="desc">
-            {`${product.availableSizes[0]} | ${product.style}`} <br />
+            {`availableSizes | ${product.style}`} <br />
             Quantity: {product.quantity}
           </p>
         </div>
         <div className="shelf-item__price">
-          <p>${product.price}</p>
+          <p>${product.price.toFixed(2)}</p>
         </div>
 
         <div className="clearfix" />
@@ -146,7 +175,7 @@ class FloatCart extends Component {
     let productAlreadyInCart = false;
 
     cartProducts.forEach(cp => {
-      if (cp.id === product.id) {
+      if (cp.id === product.id && cp.size == product.size) {
         cp.quantity += product.quantity;
         productAlreadyInCart = true;
       }
@@ -234,7 +263,7 @@ class FloatCart extends Component {
             <div className="sub">SUBTOTAL</div>
             <div className="sub-price">
               <p className="sub-price__val">
-                $0.00
+                {totalPrice(cartProducts).toFixed(2)}
               </p>
             </div>
             <div className="buy-btn">
@@ -253,15 +282,17 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
+      inventory: jsonResponse.products,
       cartProducts: [],
       productToAdd: null,
       productToRemove: null,
     };
   }
 
-  handleAddToCartButton(prod) {
+  handleAddToCartButton(prod, size) {
     let product = Object.assign({}, prod);
     product.quantity = 1; // default behavior of add to cart button
+    product.size = size;
     product.key = Math.random(); // default behavior of add to cart button
     this.setState({
       productToAdd: product,
@@ -281,7 +312,10 @@ class App extends Component {
       <div className="App">
         <main>
           <Sidebar />
-          <Canvas handleAddToCartButton={(prod) => this.handleAddToCartButton(prod)} />
+          <Canvas
+            handleAddToCartButton={(prod, size) => this.handleAddToCartButton(prod, size)}
+            inventory={this.state.inventory}
+          />
         </main>
         <FloatCart
           cartProducts={this.state.cartProducts.slice()}
@@ -310,7 +344,7 @@ const jsonResponse = {
       "sku": 12064273040195392,
       "title": "Cat Tee Black T-Shirt",
       "description": "4 MSL",
-      "availableSizes": ["S", "XS"],
+      "availableSizes": {"S": 3, "XS": 5},
       "style": "Black with custom print",
       "price": 10.9,
       "installments": 9,
@@ -324,7 +358,7 @@ const jsonResponse = {
       "sku": 51498472915966366,
       "title": "Dark Thug Blue-Navy T-Shirt",
       "description": "",
-      "availableSizes": ["M"],
+      "availableSizes": {"M": 2},
       "style": "Front print and paisley print",
       "price": 29.45,
       "installments": 5,
@@ -338,7 +372,7 @@ const jsonResponse = {
       "sku": 10686354557628303,
       "title": "Sphynx Tie Dye Wine T-Shirt",
       "description": "GPX Poly 1",
-      "availableSizes": ["X", "L", "XL"],
+      "availableSizes": {"X": 3, "L": 1, "XL": 5},
       "style": "Front tie dye print",
       "price": 9.0,
       "installments": 3,
@@ -352,7 +386,7 @@ const jsonResponse = {
       "sku": 11033926921508487,
       "title": "Skuul",
       "description": "Treino 2014",
-      "availableSizes": ["X", "L", "XL", "XXL"],
+      "availableSizes": {"X": 4, "L": 2, "XL": 3, "XXL": 1},
       "style": "Black T-Shirt with front print",
       "price": 14.0,
       "installments": 5,
@@ -366,7 +400,7 @@ const jsonResponse = {
       "sku": 39876704341265606,
       "title": "Wine Skul T-Shirt",
       "description": "",
-      "availableSizes": ["X", "L"],
+      "availableSizes": {"X": 5, "L": 2},
       "style": "Wine",
       "price": 13.25,
       "installments": 3,
@@ -380,7 +414,7 @@ const jsonResponse = {
       "sku": 10412368723880253,
       "title": "Short Sleeve T-Shirt",
       "description": "",
-      "availableSizes": ["XS", "X", "L", "ML", "XL"],
+      "availableSizes": {"XS": 3, "X": 4, "L": 5, "ML": 1, "XL": 1},
       "style": "Grey",
       "price": 75.0,
       "installments": 5,
@@ -394,7 +428,7 @@ const jsonResponse = {
       "sku": 8552515751438644,
       "title": "Cat Tee Black T-Shirt",
       "description": "14/15 s/nº",
-      "availableSizes": ["X", "L", "XL", "XXL"],
+      "availableSizes": {"X": 2, "L": 4, "XL": 3, "XXL": 5},
       "style": "Branco com listras pretas",
       "price": 10.9,
       "installments": 9,
@@ -408,7 +442,7 @@ const jsonResponse = {
       "sku": 18644119330491312,
       "title": "Sphynx Tie Dye Grey T-Shirt",
       "description": "14/15 s/nº",
-      "availableSizes": ["X", "L", "XL", "XXL"],
+      "availableSizes": {"X": 4, "L": 3, "XL": 2, "XXL": 1},
       "style": "Preta com listras brancas",
       "price": 10.9,
       "installments": 9,
@@ -422,7 +456,7 @@ const jsonResponse = {
       "sku": 11854078013954528,
       "title": "Danger Knife Grey",
       "description": "14/15 s/nº",
-      "availableSizes": ["X", "L"],
+      "availableSizes": {"X": 2, "L": 3},
       "style": "Branco com listras pretas",
       "price": 14.9,
       "installments": 7,
@@ -436,7 +470,7 @@ const jsonResponse = {
       "sku": 876661122392077,
       "title": "White DGK Script Tee",
       "description": "2014 s/nº",
-      "availableSizes": ["X", "L"],
+      "availableSizes": {"X": 1, "L": 3},
       "style": "Preto com listras brancas",
       "price": 14.9,
       "installments": 7,
@@ -450,7 +484,7 @@ const jsonResponse = {
       "sku": 9197907543445677,
       "title": "Born On The Streets",
       "description": "14/15 s/nº - Jogador",
-      "availableSizes": ["XL"],
+      "availableSizes": {"XL": 2},
       "style": "Branco com listras pretas",
       "price": 25.9,
       "installments": 12,
@@ -464,7 +498,7 @@ const jsonResponse = {
       "sku": 10547961582846888,
       "title": "Tso 3D Short Sleeve T-Shirt A",
       "description": "14/15 + Camiseta 1º Mundial",
-      "availableSizes": ["X", "L", "XL"],
+      "availableSizes": {"X": 3, "L": 2, "XL": 1},
       "style": "Preto",
       "price": 10.9,
       "installments": 9,
@@ -478,7 +512,7 @@ const jsonResponse = {
       "sku": 6090484789343891,
       "title": "Man Tie Dye Cinza Grey T-Shirt",
       "description": "Goleiro 13/14",
-      "availableSizes": ["XL", "XXL"],
+      "availableSizes": {"XL": 2, "XXL": 2},
       "style": "Branco",
       "price": 49.9,
       "installments": 0,
@@ -492,7 +526,7 @@ const jsonResponse = {
       "sku": 18532669286405342,
       "title": "Crazy Monkey Black T-Shirt",
       "description": "1977 Infantil",
-      "availableSizes": ["S"],
+      "availableSizes": {"S": 2},
       "style": "Preto com listras brancas",
       "price": 22.5,
       "installments": 4,
@@ -506,7 +540,7 @@ const jsonResponse = {
       "sku": 5619496040738316,
       "title": "Tso 3D Black T-Shirt",
       "description": "",
-      "availableSizes": ["XL"],
+      "availableSizes": {"XL": 1},
       "style": "Azul escuro",
       "price": 18.7,
       "installments": 4,
@@ -520,7 +554,7 @@ const jsonResponse = {
       "sku": 11600983276356165,
       "title": "Crazy Monkey Grey",
       "description": "",
-      "availableSizes": ["L", "XL"],
+      "availableSizes": {"L": 2, "XL": 2},
       "style": "",
       "price": 134.9,
       "installments": 5,
@@ -534,7 +568,7 @@ const jsonResponse = {
       "sku": 27250082398145995,
       "title": "On The Streets Black T-Shirt",
       "description": "",
-      "availableSizes": ["L", "XL"],
+      "availableSizes": {"L": 4, "XL": 3},
       "style": "",
       "price": 49.0,
       "installments": 9,

@@ -169,10 +169,6 @@
 
     &:hover {
       border: 1px solid #eee;
-
-      .shelf-item__buy-btn {
-        background-color: #eabf00;
-      }
     }
 
     .shelf-stopper {
@@ -225,14 +221,19 @@
     }
 
     &__buy-btn {
+      width: 23%;
+      margin: 1%;
+      float: left;
       background-color: #1b1a20;
       color: #fff;
       padding: 15px 0;
-      margin-top: 10px;
       cursor: pointer;
       // border-bottom: 2px solid #151419;
-
       transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #eabf00;
+      }
     }
   }
 }
@@ -242,8 +243,8 @@
 .float-cart {
   position: fixed;
   top: 0;
-  right: -450px;
-  width: 450px;
+  right: -550px;
+  width: 550px;
   height: 100%;
   background-color: #1b1a20;
   box-sizing: border-box;
@@ -278,7 +279,7 @@
     display: inline-block;
     vertical-align: middle;
     margin-right: 15px;
-    background-image: url('static/data/bag-icon.png');
+    background-image: url('./static/data/bag-icon.png');
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
@@ -381,7 +382,7 @@
         border-radius: 50%;
         position: absolute;
         background-size: auto 100%;
-        background-image: url('static/data/sprite_delete-icon.png');
+        background-image: url('./static/data/sprite_delete-icon.png');
         background-repeat: no-repeat;
         z-index: 2;
         cursor: pointer;
@@ -408,6 +409,7 @@
           height: auto;
         }
       }
+
       &__details {
         width: 57%;
 
@@ -424,7 +426,7 @@
       &__price {
         color: #eabf00;
         text-align: right;
-        width: 25%;
+        width: 10%;
       }
     }
   }
