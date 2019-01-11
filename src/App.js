@@ -30,14 +30,14 @@ class Product extends Component {
   render() {
     const product = this.props.product;
     return (
-      <div className="shelf-item">
+      <div className="shelf-item" onClick={() => this.props.onClick()}>
         <div className="shelf-item__thumb">
           <img src={require(`./static/data/products/${product.sku}_1.jpg`)}
            alt={product.title} />
         </div>
         <p className="shelf-item__title">{product.title}</p>
         <p className="shelf-item__price">${product.price.toFixed(2)}</p>
-        <div className="shelf-item__buy-btn" onClick={() => this.props.onClick()}>Add to Cart</div>
+        <div className="shelf-item__buy-btn">Add to Cart</div>
       </div>
     );
   }
@@ -50,7 +50,7 @@ class Canvas extends Component {
     const productListing = products.map((key, val) => {
       let p = products[val];
       return (
-        <Product key={p.sku} product={p} onClick={() => this.props.handleAddToCart(p)} />
+        <Product key={p.sku} product={p} onClick={() => this.props.handleAddToCartButton(p)} />
       );
     });
 
@@ -78,7 +78,6 @@ class CartProduct extends Component {
 
   render() {
     const { product, removeProduct } = this.props;
-
     const classes = ['shelf-item'];
 
     if (!!this.state.isMouseOver) {
@@ -123,6 +122,16 @@ class FloatCart extends Component {
     };
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.productToAdd !== this.props.productToAdd) {
+      this.addProduct(nextProps.productToAdd);
+    }
+
+    if (nextProps.productToRemove !== this.props.productToRemove) {
+      this.removeProduct(nextProps.productToRemove);
+    }
+  }
+
   openFloatCart = () => {
     this.setState({ isOpen: true });
   };
@@ -138,9 +147,10 @@ class FloatCart extends Component {
 
     cartProducts.forEach(cp => {
       if (cp.id === product.id) {
-        console.log('cp.quantity' + cp.quantity);
-          console.log('product.quantity' + product.quantity);
+        console.log('cp.quantity ' + cp.quantity);
+        console.log('product.quantity ' + product.quantity);
         cp.quantity += product.quantity;
+        console.log('cp.quantity ' + cp.quantity);
         productAlreadyInCart = true;
       }
     });
@@ -165,12 +175,11 @@ class FloatCart extends Component {
 
   render() {
     const cartProducts = this.props.cartProducts;
-    const productToAdd = this.props.productToAdd;
-    const productToRemove = this.props.productToRemove;
     let classes = ['float-cart'];
 
-    if (productToAdd) {
-      this.addProduct(productToAdd);
+    let numProducts = 0;
+    for (let i = 0; i < cartProducts.length; i++) {
+              numProducts += cartProducts[i].quantity;
     }
 
     const products = cartProducts.map(p => {
@@ -201,14 +210,14 @@ class FloatCart extends Component {
             onClick={() => this.openFloatCart()}
             className="bag bag--float-cart-closed"
           >
-            <span className="bag__quantity">{cartProducts.length}</span>
+            <span className="bag__quantity">{numProducts}</span>
           </span>
         )}
 
         <div className="float-cart__content">
           <div className="float-cart__header">
             <span className="bag">
-              <span className="bag__quantity">{cartProducts.length}</span>
+              <span className="bag__quantity">{numProducts}</span>
             </span>
             <span className="header-title">Cart</span>
           </div>
@@ -254,18 +263,18 @@ class App extends Component {
     console.log(this.state);
   }
 
-  handleAddToCart(prod) {
-    prod.quantity = 1; // default behavior of add to cart button
+  handleAddToCartButton(prod) {
+    let product = Object.assign({}, prod);
+    product.quantity = 1; // default behavior of add to cart button
+    product.key = Math.random(); // default behavior of add to cart button
     this.setState({
-      productToAdd: prod,
+      productToAdd: product,
     });
   }
 
   updateCart(cartProducts) {
     this.setState({
       cartProducts: cartProducts,
-      productToAdd: null,
-      productToRemove: null,
     });
     console.log('updateCart');
     console.log(this.state);
@@ -276,10 +285,10 @@ class App extends Component {
       <div className="App">
         <main>
           <Sidebar />
-          <Canvas handleAddToCart={(prod) => this.handleAddToCart(prod)} />
+          <Canvas handleAddToCartButton={(prod) => this.handleAddToCartButton(prod)} />
         </main>
         <FloatCart
-          cartProducts={this.state.cartProducts}
+          cartProducts={this.state.cartProducts.slice()}
           updateCart={(cP) => this.updateCart(cP)}
           productToAdd={this.state.productToAdd}
           productToRemove={this.state.productToRemove}
