@@ -147,10 +147,7 @@ class FloatCart extends Component {
 
     cartProducts.forEach(cp => {
       if (cp.id === product.id) {
-        console.log('cp.quantity ' + cp.quantity);
-        console.log('product.quantity ' + product.quantity);
         cp.quantity += product.quantity;
-        console.log('cp.quantity ' + cp.quantity);
         productAlreadyInCart = true;
       }
     });
@@ -164,7 +161,8 @@ class FloatCart extends Component {
   };
 
   removeProduct = product => {
-    const { cartProducts, updateCart } = this.props;
+    const cartProducts = this.props.cartProducts;
+    const updateCart = this.props.updateCart;
 
     const index = cartProducts.findIndex(p => p.id === product.id);
     if (index >= 0) {
@@ -184,7 +182,7 @@ class FloatCart extends Component {
 
     const products = cartProducts.map(p => {
       return (
-        <CartProduct product={p} removeProduct={() => this.removeProduct()} key={p.id} />
+        <CartProduct product={p} removeProduct={(p) => this.removeProduct(p)} key={p.id} />
       );
     });
 
@@ -227,7 +225,7 @@ class FloatCart extends Component {
             {!products.length && (
               <p className="shelf-empty">
                 Add some products in the cart <br />
-                :)
+                ^^
               </p>
             )}
           </div>
@@ -259,8 +257,6 @@ class App extends Component {
       productToAdd: null,
       productToRemove: null,
     };
-    console.log('constructor');
-    console.log(this.state);
   }
 
   handleAddToCartButton(prod) {
@@ -296,6 +292,14 @@ class App extends Component {
       </div>
     );
   }
+}
+
+function totalPrice(cartProducts) {
+  let total = 0.0;
+  for (let i = 0; i < cartProducts.length; i++) {
+    total += cartProducts[i].quantity * cartProducts[i].price;
+  }
+  return total;
 }
 
 
