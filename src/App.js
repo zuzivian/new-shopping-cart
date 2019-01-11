@@ -2,26 +2,54 @@ import React, { Component } from 'react';
 import './App.scss';
 
 class SizeButton extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      toggled: false,
+    }
+  }
+
+  toggleCheckboxChange = () => {
+    this.setState(({ toggled }) => ({
+      toggled: !toggled
+    }));
+    this.props.handleToggleFilterSize();
+  };
+
   render() {
     return (
-      <button className="filters-available-size">{this.props.size}</button>
+      <div className="filters-available-size">
+      <label>
+        <input
+          type="checkbox"
+          value={this.props.size}
+          checked={this.state.toggled}
+          onChange={this.toggleCheckboxChange}
+        />
+        <span className="checkmark">{this.props.size}</span>
+      </label>
+      </div>
     );
   }
 }
 
 class Sidebar extends Component {
   render() {
+    const sizes = ["XS", "S", "M", "X", "ML", "L", "XL", "XXL"];
+    const sizeButtons = sizes.map((sz) => {
+      return(
+        <SizeButton
+          key={sz}
+          size={sz}
+          handleToggleFilterSize={() => this.props.handleToggleFilterSize(sz)}
+        />
+      );
+    });
+
     return (
       <div className="filters">
         <h4 className="title">Sizes:</h4>
-        <SizeButton size="XS" />
-        <SizeButton size="S" />
-        <SizeButton size="M" />
-        <SizeButton size="X" />
-        <SizeButton size="ML" />
-        <SizeButton size="L" />
-        <SizeButton size="XL" />
-        <SizeButton size="XXL" />
+        {sizeButtons}
       </div>
     );
   }
@@ -49,6 +77,7 @@ class Product extends Component {
       return (
         <ProductSizeButton
           size={size}
+          key={size}
           handleButtonClick={() => this.props.handleButtonClick(size)}
         />
       );
@@ -70,9 +99,29 @@ class Product extends Component {
 
 class Canvas extends Component {
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.filteredSizes !== this.props.filteredSizes) {
+      this.forceUpdate();
+    }
+  }
+
   render() {
     const products = this.props.inventory;
-    const productListing = products.map((key, val) => {
+    var filteredSizes = this.props.filteredSizes;
+
+    var filteredProducts = products.filter((p) => {
+      const sizes = Object.keys(p.availableSizes);
+      for (let i = 0; i < sizes.length; i++) {
+        if (filteredSizes.has(sizes[i])) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (filteredSizes.size <= 0) filteredProducts = products;
+
+    const productListing = filteredProducts.map((key, val) => {
       let p = products[val];
       return (
         <Product
@@ -85,7 +134,11 @@ class Canvas extends Component {
 
     return (
       <div className="shelf-container">
-        <div className="shelf-container-header">Number of products: {products.length}</div>
+        <div className="shelf-container-header">
+          <div className="products-found">
+          {filteredProducts.length} products found.
+          </div>
+        </div>
         {productListing}
       </div>
     );
@@ -129,7 +182,7 @@ class CartProduct extends Component {
         <div className="shelf-item__details">
           <p className="title">{product.title}</p>
           <p className="desc">
-            {`availableSizes | ${product.style}`} <br />
+            {`${product.size} | ${product.style}`} <br />
             Quantity: {product.quantity}
           </p>
         </div>
@@ -175,7 +228,7 @@ class FloatCart extends Component {
     let productAlreadyInCart = false;
 
     cartProducts.forEach(cp => {
-      if (cp.id === product.id && cp.size == product.size) {
+      if (cp.id === product.id && cp.size === product.size) {
         cp.quantity += product.quantity;
         productAlreadyInCart = true;
       }
@@ -193,8 +246,8 @@ class FloatCart extends Component {
     const cartProducts = this.props.cartProducts;
     const updateCart = this.props.updateCart;
 
-    const index = cartProducts.findIndex(p => p.id === product.id);
-    if (index >= 0) {
+    const index = cartProducts.findIndex(p => (p.id === product.id && p.sz === product.sz));
+    if (index >= 0 && --cartProducts[index].quantity <= 0) {
       cartProducts.splice(index, 1);
       updateCart(cartProducts);
     }
@@ -206,7 +259,7 @@ class FloatCart extends Component {
 
     let numProducts = 0;
     for (let i = 0; i < cartProducts.length; i++) {
-              numProducts += cartProducts[i].quantity;
+      numProducts += cartProducts[i].quantity;
     }
 
     const products = cartProducts.map(p => {
@@ -286,7 +339,21 @@ class App extends Component {
       cartProducts: [],
       productToAdd: null,
       productToRemove: null,
+      filteredSizes: new Set(),
     };
+  }
+
+  handleToggleFilterSize(size) {
+    var fSizes = this.state.filteredSizes;
+    if (fSizes.has(size)) {
+      fSizes.delete(size);
+    } else {
+      fSizes.add(size);
+    }
+    this.setState({
+      filteredSizes: fSizes,
+    });
+    return;
   }
 
   handleAddToCartButton(prod, size) {
@@ -303,18 +370,17 @@ class App extends Component {
     this.setState({
       cartProducts: cartProducts,
     });
-    console.log('updateCart');
-    console.log(this.state);
   }
 
   render() {
     return (
       <div className="App">
         <main>
-          <Sidebar />
+          <Sidebar handleToggleFilterSize={(size) => this.handleToggleFilterSize(size)}/>
           <Canvas
             handleAddToCartButton={(prod, size) => this.handleAddToCartButton(prod, size)}
             inventory={this.state.inventory}
+            filteredSizes={this.state.filteredSizes}
           />
         </main>
         <FloatCart
