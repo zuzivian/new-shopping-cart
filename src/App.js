@@ -103,6 +103,10 @@ class Canvas extends Component {
     if (nextProps.filteredSizes !== this.props.filteredSizes) {
       this.forceUpdate();
     }
+
+    if (nextProps.inventory !== this.props.inventory) {
+      this.forceUpdate();
+    }
   }
 
   render() {
@@ -111,6 +115,7 @@ class Canvas extends Component {
 
     var filteredProducts = products.filter((p) => {
       const sizes = Object.keys(p.availableSizes);
+      console.log(sizes);
       for (let i = 0; i < sizes.length; i++) {
         if (filteredSizes.has(sizes[i])) {
           return true;
@@ -121,11 +126,15 @@ class Canvas extends Component {
 
     if (filteredSizes.size <= 0) filteredProducts = products;
 
+    filteredProducts = filteredProducts.filter(p => {
+      return Object.keys(p.availableSizes).length > 0;
+    });
+
     const productListing = filteredProducts.map((key, val) => {
-      let p = products[val];
+      let p = filteredProducts[val];
       return (
         <Product
-          key={p.sku}
+          key={p.id}
           product={p}
           handleButtonClick={(sz) => this.props.handleAddToCartButton(p, sz)}
         />
@@ -275,6 +284,7 @@ class FloatCart extends Component {
       if (!inventory[index].availableSizes.hasOwnProperty(product.size))
         inventory[index].availableSizes[product.size] = 0;
       inventory[index].availableSizes[product.size]++;
+      console.log(inventory[0]);
       updateInventory(inventory);
     }
   };
