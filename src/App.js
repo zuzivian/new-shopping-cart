@@ -225,10 +225,12 @@ class FloatCart extends Component {
   addProduct = product => {
     const cartProducts = this.props.cartProducts;
     const updateCart = this.props.updateCart;
+    const inventory = this.props.inventory;
+    const updateInventory = this.props.updateInventory;
     let productAlreadyInCart = false;
 
     cartProducts.forEach(cp => {
-      if (cp.id === product.id && cp.size === product.size) {
+      if (cp.id === product.id && !cp.size.localeCompare(product.size)) {
         cp.quantity += product.quantity;
         productAlreadyInCart = true;
       }
@@ -238,18 +240,42 @@ class FloatCart extends Component {
       cartProducts.push(product);
     }
 
+    // inventory update
+    inventory.splice();
+    const index = inventory.findIndex(p => (p.id === product.id));
+    if (index >= 0) {
+      inventory[index].availableSizes[product.size]--;
+      if (inventory[index].availableSizes[product.size] <= 0)
+        delete inventory[index].availableSizes[product.size];
+      updateInventory(inventory);
+    }
+
+
     updateCart(cartProducts);
+    //updateInventory(inventory);
     this.openFloatCart();
   };
 
   removeProduct = product => {
     const cartProducts = this.props.cartProducts;
     const updateCart = this.props.updateCart;
+    const inventory = this.props.inventory;
+    const updateInventory = this.props.updateInventory;
 
-    const index = cartProducts.findIndex(p => (p.id === product.id && p.sz === product.sz));
-    if (index >= 0 && --cartProducts[index].quantity <= 0) {
-      cartProducts.splice(index, 1);
+    var index = cartProducts.findIndex(p => (p.id === product.id && !p.size.localeCompare(product.size)));
+    if (index >= 0) {
+      if (--cartProducts[index].quantity <= 0) {
+        cartProducts.splice(index, 1);
+      }
       updateCart(cartProducts);
+    }
+    inventory.splice();
+    index = inventory.findIndex(p => (p.id === product.id));
+    if (index >= 0) {
+      if (!inventory[index].availableSizes.hasOwnProperty(product.size))
+        inventory[index].availableSizes[product.size] = 0;
+      inventory[index].availableSizes[product.size]++;
+      updateInventory(inventory);
     }
   };
 
@@ -372,6 +398,12 @@ class App extends Component {
     });
   }
 
+  updateInventory(inventory) {
+    this.setState({
+      inventory: inventory,
+    });
+  }
+
   render() {
     return (
       <div className="App">
@@ -386,6 +418,8 @@ class App extends Component {
         <FloatCart
           cartProducts={this.state.cartProducts.slice()}
           updateCart={(cP) => this.updateCart(cP)}
+          inventory={this.state.inventory}
+          updateInventory={(inv) => this.updateInventory(inv)}
           productToAdd={this.state.productToAdd}
           productToRemove={this.state.productToRemove}
         />
