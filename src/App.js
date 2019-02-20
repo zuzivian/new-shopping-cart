@@ -432,6 +432,33 @@ class App extends Component {
             inventory: products,
         });
       });
+
+      firebase.database().ref('users/').on("value", (data) => {
+        let found_user = false;
+        data.forEach((child) => {
+          if (child.val().uid === this.state.user.uid) {
+            found_user = true;
+            if (child.val().cartProducts) {
+              this.setState({
+                cartProducts: child.val().cartProducts,
+              });
+            } else {
+              this.setState({
+                cartProducts: [],
+              });
+            }
+          }
+        });
+
+        if (!found_user) {
+          let newUser = {
+            uid: this.state.user.uid
+          };
+          let updates = {};
+          updates['/users/' + newUser.uid] = newUser;
+          firebase.database().ref().update(updates);
+        }
+      });
     }
 
   handleToggleFilterSize(size) {
@@ -458,9 +485,16 @@ class App extends Component {
   }
 
   updateCart(cartProducts) {
-    this.setState({
-      cartProducts: cartProducts,
-    });
+    let updatedUser = {
+      uid: this.state.user.uid,
+      cartProducts: cartProducts
+    };
+    let updates = {};
+    updates['/users/' + this.state.user.uid] = updatedUser;
+    firebase.database().ref().update(updates);
+    // this.setState({
+    //   cartProducts: cartProducts,
+    // });
   }
 
   updateInventory(inventory) {
