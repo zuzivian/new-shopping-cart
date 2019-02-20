@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import './App.scss';
+import firebase, { auth, provider } from './fire.js';
+import StyledFirebaseAuth from "react-firebaseui/StyledFirebaseAuth";
 
 String.prototype.compare = function (a)
   {
@@ -41,6 +43,13 @@ class SizeButton extends Component {
 }
 
 class Sidebar extends Component {
+  uiConfig = {
+    signInFlow: "redirect",
+    signInOptions: [
+      firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+    ],
+  };
+
   render() {
     const sizes = ["XS", "S", "M", "X", "ML", "L", "XL", "XXL"];
     const sizeButtons = sizes.map((sz) => {
@@ -57,6 +66,17 @@ class Sidebar extends Component {
       <div className="filters">
         <h4 className="title">Sizes:</h4>
         {sizeButtons}
+        {this.props.user ?
+          <button onClick={this.props.logout}>Log Out</button>
+          :
+          <div>
+          <h4>Login</h4>
+          <StyledFirebaseAuth
+            uiConfig={this.uiConfig}
+            firebaseAuth={auth}
+          />
+          </div>
+        }
       </div>
     );
   }
@@ -119,33 +139,38 @@ class Canvas extends Component {
   render() {
     const products = this.props.inventory;
     var filteredSizes = this.props.filteredSizes;
-
-    var filteredProducts = products.filter((p) => {
-      const sizes = Object.keys(p.availableSizes);
-      for (let i = 0; i < sizes.length; i++) {
-        if (filteredSizes.has(sizes[i])) {
-          return true;
+    var filteredProducts = [];
+    if (products.length) {
+       filteredProducts = products.filter((p) => {
+        const sizes = Object.keys(p.availableSizes);
+        for (let i = 0; i < sizes.length; i++) {
+          if (filteredSizes.has(sizes[i])) {
+            return true;
+          }
         }
-      }
-      return false;
-    });
+        return false;
+      });
+    }
 
     if (filteredSizes.size <= 0) filteredProducts = products;
+    let productListing = "";
 
-    filteredProducts = filteredProducts.filter(p => {
-      return Object.keys(p.availableSizes).length > 0;
-    });
+    if (filteredProducts.length) {
+      filteredProducts = filteredProducts.filter(p => {
+        return Object.keys(p.availableSizes).length > 0;
+      });
 
-    const productListing = filteredProducts.map((key, val) => {
-      let p = filteredProducts[val];
-      return (
-        <Product
-          key={p.id}
-          product={p}
-          handleButtonClick={(sz) => this.props.handleAddToCartButton(p, sz)}
-        />
-      );
-    });
+      productListing = filteredProducts.map((key, val) => {
+        let p = filteredProducts[val];
+        return (
+          <Product
+            key={p.id}
+            product={p}
+            handleButtonClick={(sz) => this.props.handleAddToCartButton(p, sz)}
+          />
+        );
+      });
+    }
 
     return (
       <div className="shelf-container">
@@ -379,13 +404,35 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      inventory: jsonResponse.products,
+      inventory: {},
       cartProducts: [],
+      user: null,
       productToAdd: null,
       productToRemove: null,
       filteredSizes: new Set(),
     };
   }
+
+  componentDidMount() {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.setState({
+          user: user,
+        });
+      }
+    });
+
+    let ref = firebase.database().ref('products');
+      ref.on("value", (data) => {
+        let products = [];
+        data.forEach((child) => {
+            products.push(child.val());
+        });
+        this.setState({
+            inventory: products,
+        });
+      });
+    }
 
   handleToggleFilterSize(size) {
     var fSizes = this.state.filteredSizes;
@@ -414,7 +461,6 @@ class App extends Component {
     this.setState({
       cartProducts: cartProducts,
     });
-    console.log(cartProducts);
   }
 
   updateInventory(inventory) {
@@ -423,17 +469,27 @@ class App extends Component {
     });
   }
 
+  logout() {
+    firebase.auth().signOut().then(() => {
+      this.setState({
+        user: null
+      });
+    });
+  }
+
   render() {
     return (
       <div className="App">
-        <main>
-          <Sidebar handleToggleFilterSize={(size) => this.handleToggleFilterSize(size)}/>
+          <Sidebar
+            handleToggleFilterSize={(size) => this.handleToggleFilterSize(size)}
+            logout={() => this.logout()}
+            user={this.state.user}
+          />
           <Canvas
             handleAddToCartButton={(prod, size) => this.handleAddToCartButton(prod, size)}
             inventory={this.state.inventory}
             filteredSizes={this.state.filteredSizes}
           />
-        </main>
         <FloatCart
           cartProducts={this.state.cartProducts.slice()}
           updateCart={(cP) => this.updateCart(cP)}
@@ -454,249 +510,6 @@ function totalPrice(cartProducts) {
   }
   return total;
 }
-
-
-const jsonResponse = {
-  "products": [
-    {
-      "id": 12,
-      "sku": 12064273040195392,
-      "title": "Cat Tee Black T-Shirt",
-      "description": "4 MSL",
-      "availableSizes": {"S": 3, "XS": 5},
-      "style": "Black with custom print",
-      "price": 10.9,
-      "installments": 9,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 13,
-      "sku": 51498472915966366,
-      "title": "Dark Thug Blue-Navy T-Shirt",
-      "description": "",
-      "availableSizes": {"M": 2},
-      "style": "Front print and paisley print",
-      "price": 29.45,
-      "installments": 5,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 14,
-      "sku": 10686354557628303,
-      "title": "Sphynx Tie Dye Wine T-Shirt",
-      "description": "GPX Poly 1",
-      "availableSizes": {"X": 3, "L": 1, "XL": 5},
-      "style": "Front tie dye print",
-      "price": 9.0,
-      "installments": 3,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 15,
-      "sku": 11033926921508487,
-      "title": "Skuul",
-      "description": "Treino 2014",
-      "availableSizes": {"X": 4, "L": 2, "XL": 3, "XXL": 1},
-      "style": "Black T-Shirt with front print",
-      "price": 14.0,
-      "installments": 5,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 11,
-      "sku": 39876704341265606,
-      "title": "Wine Skul T-Shirt",
-      "description": "",
-      "availableSizes": {"X": 5, "L": 2},
-      "style": "Wine",
-      "price": 13.25,
-      "installments": 3,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 16,
-      "sku": 10412368723880253,
-      "title": "Short Sleeve T-Shirt",
-      "description": "",
-      "availableSizes": {"XS": 3, "X": 4, "L": 5, "ML": 1, "XL": 1},
-      "style": "Grey",
-      "price": 75.0,
-      "installments": 5,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 0,
-      "sku": 8552515751438644,
-      "title": "Cat Tee Black T-Shirt",
-      "description": "14/15 s/nº",
-      "availableSizes": {"X": 2, "L": 4, "XL": 3, "XXL": 5},
-      "style": "Branco com listras pretas",
-      "price": 10.9,
-      "installments": 9,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 1,
-      "sku": 18644119330491312,
-      "title": "Sphynx Tie Dye Grey T-Shirt",
-      "description": "14/15 s/nº",
-      "availableSizes": {"X": 4, "L": 3, "XL": 2, "XXL": 1},
-      "style": "Preta com listras brancas",
-      "price": 10.9,
-      "installments": 9,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 2,
-      "sku": 11854078013954528,
-      "title": "Danger Knife Grey",
-      "description": "14/15 s/nº",
-      "availableSizes": {"X": 2, "L": 3},
-      "style": "Branco com listras pretas",
-      "price": 14.9,
-      "installments": 7,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 3,
-      "sku": 876661122392077,
-      "title": "White DGK Script Tee",
-      "description": "2014 s/nº",
-      "availableSizes": {"X": 1, "L": 3},
-      "style": "Preto com listras brancas",
-      "price": 14.9,
-      "installments": 7,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 4,
-      "sku": 9197907543445677,
-      "title": "Born On The Streets",
-      "description": "14/15 s/nº - Jogador",
-      "availableSizes": {"XL": 2},
-      "style": "Branco com listras pretas",
-      "price": 25.9,
-      "installments": 12,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": false
-    },
-
-    {
-      "id": 5,
-      "sku": 10547961582846888,
-      "title": "Tso 3D Short Sleeve T-Shirt A",
-      "description": "14/15 + Camiseta 1º Mundial",
-      "availableSizes": {"X": 3, "L": 2, "XL": 1},
-      "style": "Preto",
-      "price": 10.9,
-      "installments": 9,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": false
-    },
-
-    {
-      "id": 6,
-      "sku": 6090484789343891,
-      "title": "Man Tie Dye Cinza Grey T-Shirt",
-      "description": "Goleiro 13/14",
-      "availableSizes": {"XL": 2, "XXL": 2},
-      "style": "Branco",
-      "price": 49.9,
-      "installments": 0,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 7,
-      "sku": 18532669286405342,
-      "title": "Crazy Monkey Black T-Shirt",
-      "description": "1977 Infantil",
-      "availableSizes": {"S": 2},
-      "style": "Preto com listras brancas",
-      "price": 22.5,
-      "installments": 4,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 8,
-      "sku": 5619496040738316,
-      "title": "Tso 3D Black T-Shirt",
-      "description": "",
-      "availableSizes": {"XL": 1},
-      "style": "Azul escuro",
-      "price": 18.7,
-      "installments": 4,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": false
-    },
-
-    {
-      "id": 9,
-      "sku": 11600983276356165,
-      "title": "Crazy Monkey Grey",
-      "description": "",
-      "availableSizes": {"L": 2, "XL": 2},
-      "style": "",
-      "price": 134.9,
-      "installments": 5,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    },
-
-    {
-      "id": 10,
-      "sku": 27250082398145995,
-      "title": "On The Streets Black T-Shirt",
-      "description": "",
-      "availableSizes": {"L": 4, "XL": 3},
-      "style": "",
-      "price": 49.0,
-      "installments": 9,
-      "currencyId": "USD",
-      "currencyFormat": "$",
-      "isFreeShipping": true
-    }
-  ]
-};
 
 
 export default App;
