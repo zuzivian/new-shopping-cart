@@ -8,7 +8,6 @@ var config = { /* COPY THE ACTUAL CONFIG FROM FIREBASE CONSOLE */
 };
 
 firebase.initializeApp(config);
-console.log(firebase);
 export const provider = new firebase.auth.GoogleAuthProvider();
 export const auth = firebase.auth();
 export default firebase;

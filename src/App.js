@@ -46,7 +46,7 @@ class Sidebar extends Component {
   uiConfig = {
     signInFlow: "redirect",
     signInOptions: [
-      firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+      provider.PROVIDER_ID,
     ],
   };
 
@@ -67,7 +67,10 @@ class Sidebar extends Component {
         <h4 className="title">Sizes:</h4>
         {sizeButtons}
         {this.props.user ?
+          <div>
+          <h4>Logout</h4>
           <button onClick={this.props.logout}>Log Out</button>
+          </div>
           :
           <div>
           <h4>Login</h4>
@@ -99,8 +102,13 @@ class ProductSizeButton extends Component {
 class Product extends Component {
   render() {
     const product = this.props.product;
+    const cartProducts = this.props.cartProducts;
 
-    const buyButtons = Object.keys(product.availableSizes).map((size, qty) => {
+    const buyButtons = Object.keys(product.availableSizes).map((size) => {
+      let cartprod = cartProducts.find((cP) => { return cP.sku === product.sku && cP.size === size});
+      let qty = product.availableSizes[size];
+      if (cartprod) qty -= cartprod.quantity;
+      if (qty <= 0) return ('');
       return (
         <ProductSizeButton
           size={size}
@@ -140,6 +148,7 @@ class Canvas extends Component {
     const products = this.props.inventory;
     var filteredSizes = this.props.filteredSizes;
     var filteredProducts = [];
+
     if (products.length) {
        filteredProducts = products.filter((p) => {
         const sizes = Object.keys(p.availableSizes);
@@ -166,6 +175,7 @@ class Canvas extends Component {
           <Product
             key={p.id}
             product={p}
+            cartProducts={this.props.cartProducts}
             handleButtonClick={(sz) => this.props.handleAddToCartButton(p, sz)}
           />
         );
@@ -269,8 +279,6 @@ class FloatCart extends Component {
   addProduct = product => {
     const cartProducts = this.props.cartProducts;
     const updateCart = this.props.updateCart;
-    const inventory = this.props.inventory;
-    const updateInventory = this.props.updateInventory;
     let productAlreadyInCart = false;
 
     cartProducts.forEach(cp => {
@@ -284,17 +292,6 @@ class FloatCart extends Component {
       cartProducts.push(product);
     }
 
-    // inventory update
-    inventory.splice();
-    const index = inventory.findIndex(p => (p.id === product.id));
-    if (index >= 0) {
-      inventory[index].availableSizes[product.size]--;
-      if (inventory[index].availableSizes[product.size] <= 0)
-        delete inventory[index].availableSizes[product.size];
-      updateInventory(inventory);
-    }
-
-
     updateCart(cartProducts);
     this.openFloatCart();
   };
@@ -302,8 +299,6 @@ class FloatCart extends Component {
   removeProduct = product => {
     const cartProducts = this.props.cartProducts;
     const updateCart = this.props.updateCart;
-    const inventory = this.props.inventory;
-    const updateInventory = this.props.updateInventory;
 
     var index = cartProducts.findIndex(p => (p.id === product.id && p.size.compare(product.size) === 0));
     if (index >= 0) {
@@ -311,14 +306,6 @@ class FloatCart extends Component {
         cartProducts.splice(index, 1);
       }
       updateCart(cartProducts);
-    }
-    inventory.splice();
-    index = inventory.findIndex(p => (p.id === product.id));
-    if (index >= 0) {
-      if (!inventory[index].availableSizes.hasOwnProperty(product.size))
-        inventory[index].availableSizes[product.size] = 0;
-      inventory[index].availableSizes[product.size]++;
-      updateInventory(inventory);
     }
   };
 
@@ -404,7 +391,7 @@ class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      inventory: {},
+      inventory: [],
       cartProducts: [],
       user: null,
       productToAdd: null,
@@ -423,43 +410,44 @@ class App extends Component {
     });
 
     let ref = firebase.database().ref('products');
-      ref.on("value", (data) => {
-        let products = [];
-        data.forEach((child) => {
-            products.push(child.val());
-        });
-        this.setState({
-            inventory: products,
-        });
+    ref.on("value", (data) => {
+      let products = [];
+      data.forEach((child) => {
+          products.push(child.val());
       });
+      this.setState({
+          inventory: products,
+      });
+    });
 
-      firebase.database().ref('users/').on("value", (data) => {
-        let found_user = false;
-        data.forEach((child) => {
-          if (child.val().uid === this.state.user.uid) {
-            found_user = true;
-            if (child.val().cartProducts) {
-              this.setState({
-                cartProducts: child.val().cartProducts,
-              });
-            } else {
-              this.setState({
-                cartProducts: [],
-              });
-            }
+    firebase.database().ref('users/').on("value", (data) => {
+      let found_user = false;
+      if (!this.state.user) return;
+      data.forEach((child) => {
+        if (child.val().uid === this.state.user.uid) {
+          found_user = true;
+          if (child.val().cartProducts) {
+            this.setState({
+              cartProducts: child.val().cartProducts,
+            });
+          } else {
+            this.setState({
+              cartProducts: [],
+            });
           }
-        });
-
-        if (!found_user) {
-          let newUser = {
-            uid: this.state.user.uid
-          };
-          let updates = {};
-          updates['/users/' + newUser.uid] = newUser;
-          firebase.database().ref().update(updates);
         }
       });
-    }
+
+      if (!found_user) {
+        let newUser = {
+          uid: this.state.user.uid
+        };
+        let updates = {};
+        updates['/users/' + newUser.uid] = newUser;
+        firebase.database().ref().update(updates);
+      }
+    });
+  }
 
   handleToggleFilterSize(size) {
     var fSizes = this.state.filteredSizes;
@@ -522,6 +510,7 @@ class App extends Component {
           <Canvas
             handleAddToCartButton={(prod, size) => this.handleAddToCartButton(prod, size)}
             inventory={this.state.inventory}
+            cartProducts={this.state.cartProducts}
             filteredSizes={this.state.filteredSizes}
           />
         <FloatCart
