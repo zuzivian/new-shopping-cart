@@ -375,7 +375,10 @@ class FloatCart extends Component {
                 {totalPrice(cartProducts).toFixed(2)}
               </p>
             </div>
-            <div className="buy-btn">
+            <div
+              className="buy-btn"
+              onClick={() => this.props.purchaseCart(totalPrice(cartProducts).toFixed(2))}
+            >
               Checkout
             </div>
           </div>
@@ -499,6 +502,29 @@ class App extends Component {
     });
   }
 
+  purchaseCart(total) {
+
+    let cartProducts = this.state.cartProducts;
+    let inventory = this.state.inventory;
+
+    for (let i=0; i < cartProducts.length; i++) {
+      let item = inventory.find(p => { return cartProducts[i].sku === p.sku });
+      item.availableSizes[cartProducts[i].size] -= cartProducts[i].quantity;
+      if (item.availableSizes[cartProducts[i].size] <= 0) {
+        item.availableSizes[cartProducts[i].size] = null;
+      }
+    }
+
+    alert("Thank you for patronising the shop. Your total : $" + total);
+    let updatedUser = {
+      uid: this.state.user.uid,
+    };
+    let updates = {};
+    updates['/users/' + this.state.user.uid] = updatedUser;
+    updates['/products/'] = this.state.inventory;
+    firebase.database().ref().update(updates);
+  }
+
   render() {
     return (
       <div className="App">
@@ -520,6 +546,7 @@ class App extends Component {
           updateInventory={(inv) => this.updateInventory(inv)}
           productToAdd={this.state.productToAdd}
           productToRemove={this.state.productToRemove}
+          purchaseCart={(total) => this.purchaseCart(total)}
         />
       </div>
     );
