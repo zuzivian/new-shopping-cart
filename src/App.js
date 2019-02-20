@@ -46,7 +46,7 @@ class Sidebar extends Component {
   uiConfig = {
     signInFlow: "redirect",
     signInOptions: [
-      provider.PROVIDER_ID,
+      firebase.auth.GoogleAuthProvider.PROVIDER_ID,
     ],
   };
 
@@ -73,11 +73,11 @@ class Sidebar extends Component {
           </div>
           :
           <div>
-          <h4>Login</h4>
-          <StyledFirebaseAuth
-            uiConfig={this.uiConfig}
-            firebaseAuth={auth}
-          />
+            <h4>Login</h4>
+            <StyledFirebaseAuth
+              uiConfig={this.uiConfig}
+              firebaseAuth={auth}
+            />
           </div>
         }
       </div>
@@ -526,6 +526,16 @@ class App extends Component {
   }
 
   render() {
+    if (!this.state.user)
+      return (
+        <div className="App">
+          <Sidebar
+            handleToggleFilterSize={(size) => this.handleToggleFilterSize(size)}
+            logout={() => this.logout()}
+            user={this.state.user}
+          />
+        </div>
+      );
     return (
       <div className="App">
           <Sidebar
