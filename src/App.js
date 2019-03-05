@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import './App.scss';
-import firebase, { auth, provider } from './fire.js';
+import firebase, { auth } from './fire.js';
 import StyledFirebaseAuth from "react-firebaseui/StyledFirebaseAuth";
 
-String.prototype.compare = function (a)
+compare = function (a, b)
   {
-    if (a.toString() > this.toString()) return -1;
-    if (a.toString() < this.toString()) return 1;
+    if (a.toString() < b.toString()) return -1;
+    if (a.toString() > b.toString()) return 1;
     return 0;
   };
 
@@ -282,7 +282,7 @@ class FloatCart extends Component {
     let productAlreadyInCart = false;
 
     cartProducts.forEach(cp => {
-      if (cp.id === product.id && cp.size.compare(product.size) === 0) {
+      if (cp.id === product.id && compare(product.size, cp.size) === 0) {
         cp.quantity += product.quantity;
         productAlreadyInCart = true;
       }
