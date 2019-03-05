@@ -3,7 +3,8 @@ node_js: lts/*
 sudo: false
 install:
   - npm install
-  - npm build
+script:
+  - npm run build
   - npm test
 deploy:
   skip_cleanup: true
