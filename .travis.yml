@@ -14,6 +14,7 @@ script:
 deploy:
   skip_cleanup: true
   provider: firebase
+  project: "shopping-cart"
   token:
     - 1/zQnvS5oHiGA5siOhYI-micDy_4aaOmXfYQ1GkFvXmTs
 script: echo "script"
