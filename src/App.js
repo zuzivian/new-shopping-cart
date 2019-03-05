@@ -3,7 +3,7 @@ import './App.scss';
 import firebase, { auth } from './fire.js';
 import StyledFirebaseAuth from "react-firebaseui/StyledFirebaseAuth";
 
-compare = function (a, b)
+let compare = function (a, b)
   {
     if (a.toString() < b.toString()) return -1;
     if (a.toString() > b.toString()) return 1;
