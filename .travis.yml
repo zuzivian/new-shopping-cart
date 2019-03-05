@@ -1,4 +1,19 @@
 language: node_js
 node_js: lts/*
-install: true
+sudo: false
+before_install:
+  - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.27.5
+  - export PATH=$HOME/.yarn/bin:$PATH
+cache:
+  yarn: true
+install:
+  - yarn install
+script:
+  - yarn build
+  - yarn test
+deploy:
+  skip_cleanup: true
+  provider: firebase
+  token:
+    - 1/zQnvS5oHiGA5siOhYI-micDy_4aaOmXfYQ1GkFvXmTs
 script: echo "script"
