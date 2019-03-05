@@ -16,5 +16,5 @@ deploy:
   provider: firebase
   project: "shopping-cart"
   token:
-    - 1/zQnvS5oHiGA5siOhYI-micDy_4aaOmXfYQ1GkFvXmTs
+    - 1/RGJVLPZVBeGUh_jGV9my0t0O4jgUyOUUEaC6pWKsXtQNipKZZKwj6DdY8ZZzFhpV
 script: echo "script"
